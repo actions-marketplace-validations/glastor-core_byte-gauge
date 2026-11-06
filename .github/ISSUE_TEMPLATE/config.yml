@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🛡️ Security Vulnerability Report
+    url: https://github.com/glastor-core/byte-gauge/security/advisories/new
+    about: Report security vulnerabilities privately to GLASTOR® Core.
+  - name: 🌐 GLASTOR® Core Official Portal
+    url: https://glastor.es
+    about: Corporate portal and DevSecOps ecosystem documentation.
+

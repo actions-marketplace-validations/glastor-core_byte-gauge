@@ -1,0 +1,139 @@
+name: 🛡️ Byte-Gauge CI & Binary Audit
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+# Estándar GitHub 2026 / OpenSSF Scorecard: Cero permisos globales por defecto
+permissions: {}
+
+# Cancela ejecuciones redundantes en la misma rama o PR (FinOps)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  audit:
+    name: Rust Quality, checksec, SARIF & CycloneDX SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry & target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting (rustfmt)
+        run: cargo fmt --all -- --check
+
+      - name: Lint with Clippy (strict)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run unit & E2E integration tests (16 tests)
+        run: cargo test --verbose
+
+      - name: Build optimized release binary (stripped + LTO)
+        run: cargo build --release --locked
+
+      - name: Restore previous audit baseline (for size delta tracking)
+        uses: actions/cache/restore@v4
+        with:
+          path: .byte-gauge/baseline.json
+          key: byte-gauge-baseline-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            byte-gauge-baseline-${{ github.ref_name }}-
+            byte-gauge-baseline-main-
+            byte-gauge-baseline-master-
+
+      - name: Run Byte-Gauge Self-Audit (Markdown + JSON + SARIF 2.1.0 + CycloneDX 1.5 SBOM)
+        id: self-audit
+        run: |
+          ./target/release/byte-gauge \
+            --file-path ./target/release/byte-gauge \
+            --max-size-mb 10.0 \
+            --max-regression-pct 5.0 \
+            --fail-on-debug \
+            --baseline-json .byte-gauge/baseline.json \
+            --output-json .byte-gauge/current-audit.json \
+            --output-sarif .byte-gauge/byte-gauge.sarif \
+            --output-sbom .byte-gauge/byte-gauge.cdx.json \
+            --output-markdown .byte-gauge/sticky-comment.md
+          cp .byte-gauge/current-audit.json .byte-gauge/baseline.json
+
+      - name: Post or Update PR Sticky Comment
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO_FULL: ${{ github.repository }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -f ".byte-gauge/sticky-comment.md" ] && [ -n "$PR_NUM" ]; then
+            EXISTING_ID=$(gh api "repos/${REPO_FULL}/issues/${PR_NUM}/comments" \
+              --jq '.[] | select(.body | contains("<!-- glastor-byte-gauge-sticky-comment -->")) | .id' | head -n 1 || true)
+            if [ -n "$EXISTING_ID" ]; then
+              gh api -X PATCH "repos/${REPO_FULL}/issues/comments/${EXISTING_ID}" \
+                -F body=@.byte-gauge/sticky-comment.md >/dev/null 2>&1 || true
+            else
+              gh pr comment "$PR_NUM" --repo "$REPO_FULL" --body-file .byte-gauge/sticky-comment.md >/dev/null 2>&1 || true
+            fi
+          fi
+
+      - name: Upload SARIF 2.1.0 report to GitHub Security (Code Scanning)
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
+        with:
+          sarif_file: .byte-gauge/byte-gauge.sarif
+          category: byte-gauge-binary-audit
+
+      - name: Update baseline cache on main/master
+        if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+        uses: actions/cache/save@v4
+        with:
+          path: .byte-gauge/baseline.json
+          key: byte-gauge-baseline-${{ github.ref_name }}-${{ github.sha }}
+        env:
+          BASELINE_PREP: ${{ steps.self-audit.outputs.status }}
+
+      - name: Upload JSON, SARIF & CycloneDX SBOM Telemetry Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: byte-gauge-telemetry
+          path: |
+            .byte-gauge/current-audit.json
+            .byte-gauge/byte-gauge.sarif
+            .byte-gauge/byte-gauge.cdx.json
+          retention-days: 14
+
+  # Dogfooding del ecosistema GLASTOR® Core con glastor-core/nemesis
+  nemesis-devsecops:
+    name: 🛡️ GLASTOR® Nemesis DevSecOps Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run GLASTOR® Nemesis SAST & IaC Security Gate
+        uses: glastor-core/nemesis@v1
+        continue-on-error: true

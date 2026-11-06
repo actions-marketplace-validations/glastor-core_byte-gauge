@@ -1,0 +1,34 @@
+name: 🐛 Bug Report
+description: Report a defect in Byte-Gauge binary scanning, section parsing, or GitHub Actions integration
+title: "fix: "
+labels: ["bug", "triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Clear description of the issue encountered.
+    validations:
+      required: true
+  - type: dropdown
+    id: binary-format
+    attributes:
+      label: Target Binary Format
+      options:
+        - ELF (Linux)
+        - PE / PE32+ (Windows)
+        - Mach-O (macOS)
+        - Vortex Standalone Binary (deno compile)
+        - Medusa Edge Bundle / Raw Blob
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Run `byte-gauge --file-path ...`
+        2. Observe output...
+    validations:
+      required: true
+

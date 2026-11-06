@@ -1,0 +1,196 @@
+name: "GLASTOR® Byte-Gauge — Rust SIMD Binary & Artifact Auditor"
+description: "High-speed Rust SIMD binary auditor (ELF/PE/Mach-O/Wasm checksec, Shannon entropy, SARIF 2.1.0, CycloneDX SBOM & PR Sticky Comment). Complements Vortex & Medusa."
+author: "Andrés Antonio Cardoso — GLASTOR® Core (@glastor-dev)"
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  file-path:
+    description: "Comma-separated path(s) to binary/Wasm artifact(s) to audit (e.g., 'dist/vortex-linux-x64,dist/medusa.wasm')"
+    required: true
+    default: "dist/app.bin"
+  forbidden-patterns:
+    description: "Comma-separated list of forbidden byte sequences (leave empty to use built-in Vortex/Medusa/Cloud secret guard)"
+    required: false
+    default: ""
+  scan-entropy-secrets:
+    description: "Enable heuristic high-entropy secret string hunter with redacted masking (true/false)"
+    required: false
+    default: "false"
+  max-size-mb:
+    description: "Maximum allowed size in MB before failing the workflow"
+    required: false
+    default: ""
+  max-regression-pct:
+    description: "Maximum allowed percentage size growth vs baseline JSON (e.g. '5.0' for +5%)"
+    required: false
+    default: ""
+  max-entropy:
+    description: "Shannon entropy warning threshold (0.0 - 8.0 bits/byte)"
+    required: false
+    default: "7.2"
+  fail-on-debug:
+    description: "Fail the workflow if debug symbols (.debug/.symtab/Wasm name) are present"
+    required: false
+    default: "false"
+  output-json:
+    description: "Optional path to export JSON metrics for FinOps & Core 4R telemetry"
+    required: false
+    default: "byte-gauge-report.json"
+  output-sarif:
+    description: "Optional path to export SARIF 2.1.0 report for GitHub Security (Code Scanning)"
+    required: false
+    default: ""
+  output-sbom:
+    description: "Optional path to export CycloneDX 1.5 JSON SBOM"
+    required: false
+    default: ""
+  baseline-json:
+    description: "Optional path to a previous JSON report to compute size regression delta (+KB / +%)"
+    required: false
+    default: ""
+  post-pr-comment:
+    description: "Automatically create or update a Sticky Comment on Pull Requests with the audit summary"
+    required: false
+    default: "true"
+  github-token:
+    description: "GitHub Token used to post/update Pull Request Sticky Comments"
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  status:
+    description: "Audit verdict (passed, warning, failed)"
+    value: ${{ steps.run-audit.outputs.status }}
+  size_bytes:
+    description: "Total size of the primary binary in bytes"
+    value: ${{ steps.run-audit.outputs.size_bytes }}
+  size_mb:
+    description: "Total size of the primary binary in megabytes"
+    value: ${{ steps.run-audit.outputs.size_mb }}
+  sha256:
+    description: "SHA-256 cryptographic digest of the primary binary"
+    value: ${{ steps.run-audit.outputs.sha256 }}
+  entropy:
+    description: "Global Shannon entropy in bits per byte (0.0000 - 8.0000)"
+    value: ${{ steps.run-audit.outputs.entropy }}
+  peak_entropy:
+    description: "Peak 64KB window Shannon entropy in bits per byte"
+    value: ${{ steps.run-audit.outputs.peak_entropy }}
+  peak_entropy_offset:
+    description: "Hexadecimal byte offset of the highest-entropy 64KB window"
+    value: ${{ steps.run-audit.outputs.peak_entropy_offset }}
+  issues:
+    description: "Total number of forbidden pattern matches found"
+    value: ${{ steps.run-audit.outputs.issues }}
+  format:
+    description: "Detected executable format (ELF, PE (Windows), Mach-O (macOS), WebAssembly (Wasm), Raw Binary / Blob)"
+    value: ${{ steps.run-audit.outputs.format }}
+  architecture:
+    description: "Detected CPU/VM architecture (x86_64, ARM64, wasm32, etc.)"
+    value: ${{ steps.run-audit.outputs.architecture }}
+  has_debug_symbols:
+    description: "Whether unstripped debug symbols were detected (true/false)"
+    value: ${{ steps.run-audit.outputs.has_debug_symbols }}
+  aslr_pie:
+    description: "Whether ASLR / Position Independent Executable (PIE) is enabled (true/false)"
+    value: ${{ steps.run-audit.outputs.aslr_pie }}
+  nx_dep:
+    description: "Whether Non-Executable Stack (NX / DEP) is enabled (true/false)"
+    value: ${{ steps.run-audit.outputs.nx_dep }}
+  dynamic_libs_count:
+    description: "Number of dynamically linked shared libraries (0 = 100% static)"
+    value: ${{ steps.run-audit.outputs.dynamic_libs_count }}
+  regression_pct:
+    description: "Percentage size delta compared to baseline JSON"
+    value: ${{ steps.run-audit.outputs.regression_pct }}
+  duration_ms:
+    description: "Scan execution time in milliseconds"
+    value: ${{ steps.run-audit.outputs.duration_ms }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Try downloading pre-compiled Release binary (0s FinOps Fast-Path)
+      id: prebuilt
+      shell: bash
+      env:
+        ACTION_DIR: ${{ github.action_path }}
+        RUNNER_OS_NAME: ${{ runner.os }}
+        RUNNER_ARCH_NAME: ${{ runner.arch }}
+      run: |
+        mkdir -p "${ACTION_DIR}/target/release"
+        BIN_DEST="${ACTION_DIR}/target/release/byte-gauge"
+        ASSET=""
+        if [ "$RUNNER_OS_NAME" = "Linux" ] && [ "$RUNNER_ARCH_NAME" = "X64" ]; then
+          ASSET="byte-gauge-linux-x64"
+        elif [ "$RUNNER_OS_NAME" = "Windows" ] && [ "$RUNNER_ARCH_NAME" = "X64" ]; then
+          ASSET="byte-gauge-windows-x64.exe"
+          BIN_DEST="${ACTION_DIR}/target/release/byte-gauge.exe"
+        elif [ "$RUNNER_OS_NAME" = "macOS" ] && [ "$RUNNER_ARCH_NAME" = "ARM64" ]; then
+          ASSET="byte-gauge-macos-arm64"
+        elif [ "$RUNNER_OS_NAME" = "macOS" ] && [ "$RUNNER_ARCH_NAME" = "X64" ]; then
+          ASSET="byte-gauge-macos-x64"
+        fi
+
+        if [ -n "$ASSET" ] && curl -fsSL "https://github.com/glastor-core/byte-gauge/releases/latest/download/${ASSET}" -o "$BIN_DEST" 2>/dev/null; then
+          chmod +x "$BIN_DEST"
+          echo "downloaded=true" >> "$GITHUB_OUTPUT"
+          echo "⚡ Pre-compiled binary (${ASSET}) downloaded from GitHub Release!"
+        else
+          echo "downloaded=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Cache byte-gauge release binary (Fallback)
+      id: cache-bin
+      if: steps.prebuilt.outputs.downloaded != 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.action_path }}/target/release/byte-gauge*
+        key: glastor-byte-gauge-bin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/Cargo.lock', github.action_path), format('{0}/src/**/*.rs', github.action_path)) }}
+
+    - name: Build byte-gauge from source (Fallback if not prebuilt or cached)
+      if: steps.prebuilt.outputs.downloaded != 'true' && steps.cache-bin.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: cargo build --release --locked
+
+    - name: Execute Byte-Gauge Binary Audit
+      id: run-audit
+      shell: bash
+      env:
+        ACTION_DIR: ${{ github.action_path }}
+        INPUT_FILE_PATH: ${{ inputs.file-path }}
+        INPUT_FORBIDDEN_PATTERNS: ${{ inputs.forbidden-patterns }}
+        INPUT_SCAN_ENTROPY_SECRETS: ${{ inputs.scan-entropy-secrets }}
+        INPUT_MAX_SIZE_MB: ${{ inputs.max-size-mb }}
+        INPUT_MAX_REGRESSION_PCT: ${{ inputs.max-regression-pct }}
+        INPUT_MAX_ENTROPY: ${{ inputs.max-entropy }}
+        INPUT_FAIL_ON_DEBUG: ${{ inputs.fail-on-debug }}
+        INPUT_OUTPUT_JSON: ${{ inputs.output-json }}
+        INPUT_OUTPUT_SARIF: ${{ inputs.output-sarif }}
+        INPUT_OUTPUT_SBOM: ${{ inputs.output-sbom }}
+        INPUT_OUTPUT_MARKDOWN: ".byte-gauge/sticky-comment.md"
+        INPUT_BASELINE_JSON: ${{ inputs.baseline-json }}
+      run: "${ACTION_DIR}/target/release/byte-gauge"
+
+    - name: Post or Update Pull Request Sticky Comment
+      if: always() && inputs.post-pr-comment == 'true' && github.event_name == 'pull_request'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPO_FULL: ${{ github.repository }}
+        PR_NUM: ${{ github.event.pull_request.number }}
+      run: |
+        if [ ! -f ".byte-gauge/sticky-comment.md" ] || [ -z "$PR_NUM" ]; then
+          exit 0
+        fi
+        EXISTING_ID=$(gh api "repos/${REPO_FULL}/issues/${PR_NUM}/comments" \
+          --jq '.[] | select(.body | contains("<!-- glastor-byte-gauge-sticky-comment -->")) | .id' | head -n 1 || true)
+        if [ -n "$EXISTING_ID" ]; then
+          gh api -X PATCH "repos/${REPO_FULL}/issues/comments/${EXISTING_ID}" \
+            -F body=@.byte-gauge/sticky-comment.md >/dev/null 2>&1 || true
+        else
+          gh pr comment "$PR_NUM" --repo "$REPO_FULL" --body-file .byte-gauge/sticky-comment.md >/dev/null 2>&1 || true
+        fi

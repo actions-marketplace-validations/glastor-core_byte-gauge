@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -e
+
+echo "🛡️ [byte-gauge pre-push] Running unit tests before push..."
+cargo test --offline
+echo "✅ [byte-gauge pre-push] All tests passed!"
+

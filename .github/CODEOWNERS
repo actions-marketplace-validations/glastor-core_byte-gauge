@@ -1,0 +1,7 @@
+# Global Ownership — GLASTOR® Core
+* @glastor-dev
+/src/ @glastor-dev
+/.github/ @glastor-dev
+/action.yml @glastor-dev
+/Cargo.toml @glastor-dev
+

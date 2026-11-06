@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "GLASTOR® Byte-Gauge — High-Performance Rust SIMD Binary & Artifact Auditor"
+message: "If you use this software in your CI/CD pipelines or research, please cite it using the metadata from this file."
+type: software
+authors:
+  - given-names: "Andrés Antonio"
+    family-names: "Cardoso"
+    email: "ventas@glastor.es"
+    affiliation: "GLASTOR® Core (@glastor-dev)"
+repository-code: "https://github.com/glastor-core/byte-gauge"
+url: "https://glastor.es"
+license: MIT
+version: "0.1.0"
+date-released: "2026-11-06"
+keywords:
+  - rust
+  - simd
+  - binary-audit
+  - github-actions
+  - devsecops
+  - finops
+  - glastor-core
+  - vortex
+  - medusa
+

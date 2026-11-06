@@ -1,0 +1,27 @@
+[package]
+name = "byte-gauge"
+version = "0.1.0"
+edition = "2024"
+authors = ["Andrés Antonio Cardoso <ventas@glastor.es>"]
+description = "GLASTOR® Core — High-performance Rust SIMD binary auditor, ELF/PE/Mach-O section analyzer, Shannon entropy & FinOps telemetry engine for GitHub Actions (complements @glastor-core/vortex & @glastor-core/medusa)"
+homepage = "https://glastor.es"
+repository = "https://github.com/glastor-core/byte-gauge"
+license = "MIT"
+keywords = ["github-actions", "binary-audit", "simd", "devsecops", "glastor-core"]
+categories = ["command-line-utilities", "development-tools::profiling", "cryptography"]
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive", "env"] }
+goblin = "0.9"
+memchr = "2.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"

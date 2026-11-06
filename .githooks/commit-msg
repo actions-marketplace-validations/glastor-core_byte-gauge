@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+set -e
+
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(head -n 1 "$COMMIT_MSG_FILE")
+
+if ! echo "$COMMIT_MSG" | grep -Eq "^(feat|fix|perf|docs|style|refactor|test|build|ci|chore|revert|security)(\([a-zA-Z0-9_-]+\))?!?: .+"; then
+  echo "❌ [byte-gauge commit-msg] Invalid Conventional Commit message:"
+  echo "   \"$COMMIT_MSG\""
+  echo "💡 Expected format: <type>(<scope>): <subject> (e.g., feat(scanner): add SIMD chunk overlap)"
+  exit 1
+fi
+

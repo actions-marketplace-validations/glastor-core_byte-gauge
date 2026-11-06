@@ -1,0 +1,359 @@
+name: 🚀 Automated SemVer, Cross-Platform Release & SLSA Provenance
+
+on:
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - "**.md"
+      - "!CHANGELOG.md"
+  workflow_dispatch:
+    inputs:
+      bump_override:
+        description: "Tipo de incremento de versión (auto detecta por Conventional Commits)"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+
+# Estándar GitHub 2026 / OpenSSF Scorecard: Cero permisos globales por defecto (definidos por job)
+permissions: {}
+
+concurrency:
+  group: automated-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ============================================================================
+  # 1️⃣ VERSION GATE: Auto-Versionado SemVer, Changelog y Tags Flotantes (v1)
+  # ============================================================================
+  version-gate:
+    name: 🏷️ Auto-SemVer & Changelog Generator
+    runs-on: ubuntu-latest
+    if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
+    permissions:
+      contents: write
+    outputs:
+      should_release: ${{ steps.semver.outputs.should_release }}
+      release_version: ${{ steps.semver.outputs.release_version }}
+      release_tag: ${{ steps.semver.outputs.release_tag }}
+      release_notes: ${{ steps.semver.outputs.release_notes }}
+
+    steps:
+      - name: Checkout full Git history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Compute SemVer bump, update Cargo.toml/CHANGELOG & push tags
+        id: semver
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUMP_OVERRIDE: ${{ github.event.inputs.bump_override || 'auto' }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          CURRENT_CARGO_VER=$(grep -m1 '^version = "' Cargo.toml | sed -E 's/version = "([^"]+)"/\1/')
+          LATEST_TAG=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1 || true)
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "🎉 Primera publicación detectada (sin tags previos): inicializando release v${CURRENT_CARGO_VER}"
+            NEW_VER="$CURRENT_CARGO_VER"
+            IS_INITIAL="true"
+            COMMIT_RANGE="HEAD"
+          elif ! gh release view "$LATEST_TAG" >/dev/null 2>&1 && [ "$(git rev-parse "${LATEST_TAG}^{commit}")" = "$(git rev-parse HEAD)" ]; then
+            echo "🎉 Tag inicial ${LATEST_TAG} detectado en HEAD sin GitHub Release publicado: procediendo a compilar y publicar ${LATEST_TAG}"
+            NEW_VER="${LATEST_TAG#v}"
+            IS_INITIAL="true"
+            COMMIT_RANGE="HEAD"
+          else
+            IS_INITIAL="false"
+            COMMIT_RANGE="${LATEST_TAG}..HEAD"
+            COMMITS=$(git log "$COMMIT_RANGE" --pretty=format:"%s" || true)
+
+            if [ -z "$COMMITS" ] && [ "$BUMP_OVERRIDE" = "auto" ]; then
+              echo "ℹ️ No hay commits nuevos desde ${LATEST_TAG}. Omitiendo release."
+              echo "should_release=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            BASE_VER="${LATEST_TAG#v}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VER"
+
+            BUMP="none"
+            if [ "$BUMP_OVERRIDE" != "auto" ]; then
+              BUMP="$BUMP_OVERRIDE"
+            else
+              if git log "$COMMIT_RANGE" --pretty=format:"%B" | grep -Eq "(BREAKING CHANGE|^[a-z]+(\([^)]+\))?!:)"; then
+                BUMP="major"
+              elif echo "$COMMITS" | grep -Eq "^feat(\([^)]+\))?:"; then
+                BUMP="minor"
+              elif echo "$COMMITS" | grep -Eq "^(fix|perf|security|refactor|build)(\([^)]+\))?:"; then
+                BUMP="patch"
+              fi
+            fi
+
+            if [ "$BUMP" = "none" ]; then
+              echo "ℹ️ Solo cambios menores (docs/chore/ci) desde ${LATEST_TAG}. Omitiendo release automático."
+              echo "should_release=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            case "$BUMP" in
+              major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+              minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+              patch)
+                PATCH=$((PATCH + 1))
+                ;;
+            esac
+
+            NEW_VER="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+
+          NEW_TAG="v${NEW_VER}"
+          TODAY=$(date -u +"%Y-%m-%d")
+
+          # Generar notas de la versión categorizadas por Conventional Commits
+          FEAT_LIST=$(git log "$COMMIT_RANGE" --pretty=format:"- %s (\`%h\`)" --grep="^feat" || true)
+          FIX_LIST=$(git log "$COMMIT_RANGE" --pretty=format:"- %s (\`%h\`)" --grep="^fix\|^security" || true)
+          PERF_LIST=$(git log "$COMMIT_RANGE" --pretty=format:"- %s (\`%h\`)" --grep="^perf\|^refactor" || true)
+          OTHER_LIST=$(git log "$COMMIT_RANGE" --pretty=format:"- %s (\`%h\`)" --invert-grep --grep="^feat\|^fix\|^security\|^perf\|^refactor\|^chore(release)" || true)
+
+          NOTES_FILE=$(mktemp)
+          {
+            echo "## [${NEW_VER}] - ${TODAY}"
+            echo ""
+            if [ -n "$FEAT_LIST" ]; then
+              echo "### 🚀 Features"
+              echo "$FEAT_LIST"
+              echo ""
+            fi
+            if [ -n "$FIX_LIST" ]; then
+              echo "### 🛡️ Bug Fixes & Security"
+              echo "$FIX_LIST"
+              echo ""
+            fi
+            if [ -n "$PERF_LIST" ]; then
+              echo "### ⚡ Performance & Refactoring"
+              echo "$PERF_LIST"
+              echo ""
+            fi
+            if [ -n "$OTHER_LIST" ]; then
+              echo "### 📦 Maintenance & CI"
+              echo "$OTHER_LIST"
+              echo ""
+            fi
+          } > "$NOTES_FILE"
+
+          if [ "$IS_INITIAL" = "false" ]; then
+            sed -i -E "0,/^version = \"[^\"]+\"/s//version = \"${NEW_VER}\"/" Cargo.toml
+            sed -i -E "s/^version: \"[^\"]+\"/version: \"${NEW_VER}\"/" CITATION.cff
+            sed -i -E "s/^date-released: \"[^\"]+\"/date-released: \"${TODAY}\"/" CITATION.cff
+
+            python3 -c '
+          import pathlib, re, sys
+          ver = sys.argv[1]
+          p = pathlib.Path("Cargo.lock")
+          if p.exists():
+              txt = p.read_text()
+              txt = re.sub(r"(name = \"byte-gauge\"\nversion = )\"[^\"]+\"", f"\\1\"{ver}\"", txt, count=1)
+              p.write_text(txt)
+          ' "$NEW_VER"
+
+            python3 -c '
+          import pathlib, sys
+          notes = pathlib.Path(sys.argv[1]).read_text()
+          cl = pathlib.Path("CHANGELOG.md")
+          if cl.exists():
+              content = cl.read_text()
+              marker = "## ["
+              idx = content.find(marker)
+              if idx != -1:
+                  updated = content[:idx] + notes + "\n" + content[idx:]
+              else:
+                  updated = content + "\n" + notes
+              cl.write_text(updated)
+          ' "$NOTES_FILE"
+
+            git add Cargo.toml Cargo.lock CITATION.cff CHANGELOG.md
+            git commit -m "chore(release): ${NEW_TAG} [skip ci]"
+            git push origin HEAD:main
+          fi
+
+          MAJOR_NUM=$(echo "$NEW_VER" | cut -d. -f1)
+          git tag -f -a "$NEW_TAG" -m "Release ${NEW_TAG} — GLASTOR Byte-Gauge"
+          git tag -f "v${MAJOR_NUM}" -m "Floating major tag v${MAJOR_NUM} -> ${NEW_TAG}"
+          git tag -f "v1" -m "Floating Marketplace v1 tag -> ${NEW_TAG}"
+          git push origin "$NEW_TAG" --force
+          git push origin "v${MAJOR_NUM}" --force
+          git push origin "v1" --force
+
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+          echo "release_version=${NEW_VER}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${NEW_TAG}" >> "$GITHUB_OUTPUT"
+          {
+            echo "release_notes<<EOF_NOTES"
+            cat "$NOTES_FILE"
+            echo "EOF_NOTES"
+          } >> "$GITHUB_OUTPUT"
+
+  # ============================================================================
+  # 2️⃣ BUILD MATRIX: Compilación Multi-OS + Auto-Auditoría (Solo Lectura)
+  # ============================================================================
+  build-matrix:
+    name: 🔨 Build & Self-Audit (${{ matrix.artifact_name }})
+    needs: version-gate
+    if: needs.version-gate.outputs.should_release == 'true'
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin_name: byte-gauge
+            artifact_name: byte-gauge-linux-x64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin_name: byte-gauge.exe
+            artifact_name: byte-gauge-windows-x64.exe
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bin_name: byte-gauge
+            artifact_name: byte-gauge-macos-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            bin_name: byte-gauge
+            artifact_name: byte-gauge-macos-x64
+
+    steps:
+      - name: Checkout release tag (${{ needs.version-gate.outputs.release_tag }})
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version-gate.outputs.release_tag }}
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compile standalone release binary
+        env:
+          MATRIX_TARGET: ${{ matrix.target }}
+        run: cargo build --release --locked --target "$MATRIX_TARGET"
+
+      - name: Stage artifact
+        shell: bash
+        env:
+          MATRIX_TARGET: ${{ matrix.target }}
+          MATRIX_BIN: ${{ matrix.bin_name }}
+          MATRIX_ARTIFACT: ${{ matrix.artifact_name }}
+        run: |
+          mkdir -p dist
+          cp "target/${MATRIX_TARGET}/release/${MATRIX_BIN}" "dist/${MATRIX_ARTIFACT}"
+
+      - name: Self-Audit compiled binary with Byte-Gauge (JSON + SARIF + CycloneDX SBOM)
+        if: matrix.target != 'x86_64-apple-darwin'
+        shell: bash
+        env:
+          MATRIX_ARTIFACT: ${{ matrix.artifact_name }}
+        run: |
+          "./dist/${MATRIX_ARTIFACT}" \
+            --file-path "./dist/${MATRIX_ARTIFACT}" \
+            --max-size-mb 10.0 \
+            --fail-on-debug \
+            --output-json "dist/${MATRIX_ARTIFACT}.audit.json" \
+            --output-sarif "dist/${MATRIX_ARTIFACT}.sarif" \
+            --output-sbom "dist/${MATRIX_ARTIFACT}.cdx.json"
+
+      - name: Upload compiled binary & CycloneDX SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            dist/${{ matrix.artifact_name }}
+            dist/${{ matrix.artifact_name }}.audit.json
+            dist/${{ matrix.artifact_name }}.cdx.json
+          retention-days: 5
+
+  # ============================================================================
+  # 3️⃣ PUBLISH RELEASE: GitHub Release + SHA256SUMS + SLSA Build Provenance
+  # ============================================================================
+  publish-release:
+    name: 📦 Publish GitHub Release & SLSA Attestation
+    needs: [version-gate, build-matrix]
+    if: needs.version-gate.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Download all compiled binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS.txt
+        working-directory: release-assets
+        run: |
+          sha256sum byte-gauge-linux-x64 byte-gauge-windows-x64.exe byte-gauge-macos-arm64 byte-gauge-macos-x64 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Attest SLSA Build Provenance (Sigstore OIDC)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            release-assets/byte-gauge-linux-x64
+            release-assets/byte-gauge-windows-x64.exe
+            release-assets/byte-gauge-macos-arm64
+            release-assets/byte-gauge-macos-x64
+
+      - name: Publish Official GitHub Release (${{ needs.version-gate.outputs.release_tag }})
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version-gate.outputs.release_tag }}
+          name: "🛡️ GLASTOR® Byte-Gauge ${{ needs.version-gate.outputs.release_tag }}"
+          body: |
+            ${{ needs.version-gate.outputs.release_notes }}
+
+            ---
+            ### 📦 Pre-Compiled Standalone Binaries (`LTO + Stripped`)
+            | Platform | Architecture | Asset |
+            | :--- | :--- | :--- |
+            | **Linux** | `x86_64` | `byte-gauge-linux-x64` |
+            | **Windows** | `x86_64 (PE32+)` | `byte-gauge-windows-x64.exe` |
+            | **macOS** | `Apple Silicon (ARM64)` | `byte-gauge-macos-arm64` |
+            | **macOS** | `Intel (x86_64)` | `byte-gauge-macos-x64` |
+
+            🔐 Verify integrity with `sha256sum -c SHA256SUMS.txt` or `gh attestation verify <binary> --owner glastor-core`.
+          generate_release_notes: true
+          files: |
+            release-assets/byte-gauge-*
+            release-assets/SHA256SUMS.txt

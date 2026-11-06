@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+set -e
+
+echo "🛡️ [byte-gauge pre-commit] Verifying formatting (rustfmt) & strict lints (clippy)..."
+cargo fmt --all -- --check
+cargo clippy --all-targets --offline -- -D warnings
+echo "✅ [byte-gauge pre-commit] Formatting and Clippy passed!"
+

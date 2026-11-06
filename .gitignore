@@ -1,0 +1,48 @@
+# =============================================================================
+# GLASTOR® Byte-Gauge — Hardened .gitignore (GitHub 2026 Security Standard)
+# =============================================================================
+
+# Rust / Cargo build & profiling artifacts
+/target/
+/dist/
+/release-assets/
+*.pdb
+*.dwo
+*.profraw
+*.profdata
+lcov.info
+/coverage/
+
+# Byte-Gauge local telemetry & ephemeral audit outputs
+/.byte-gauge/
+byte-gauge-report.json
+*-report.json
+*.audit.json
+*.cdx.json
+*.sarif
+sticky-comment.md
+SHA256SUMS.txt
+
+# Environment variables, credentials & cryptographic keys (Zero Secret Leak Guard)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.kdbx
+*credentials*.json
+*secret*.json
+*.token
+
+# IDE, Editor & OS local metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini

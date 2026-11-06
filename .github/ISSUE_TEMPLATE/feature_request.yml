@@ -1,0 +1,24 @@
+name: 🚀 Feature Request
+description: Propose an enhancement for Byte-Gauge or its synergy with Vortex & Medusa
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: Describe the capability or telemetry metric you would like to add.
+    validations:
+      required: true
+  - type: dropdown
+    id: ecosystem-scope
+    attributes:
+      label: Ecosystem Synergy Scope
+      options:
+        - Byte-Gauge Core (SIMD / Entropy / Goblin Section Analyzer)
+        - Vortex Integration (Pre-Build / Binary Compilation Telemetry)
+        - Medusa Integration (Zero-Trust Secret Gate / Edge Bundle Audit)
+        - GitHub Actions Job Summary / Mermaid UI
+    validations:
+      required: true
+
