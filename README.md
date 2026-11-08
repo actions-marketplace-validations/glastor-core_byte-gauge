@@ -71,4 +71,5 @@ Designed to complete the compiled artifact certification stage within the **[GLA
 ## 📄 License & Corporate Governance
 
 Distributed under the **MIT** license.  
-© 2026 **Andrés Antonio Cardoso — GLASTOR® Core ([@glastor-dev](https://github.com/glastor-dev))** — [https://glastor.es](https://glastor.es) (`ventas@glastor.es`).
+
+© 2010–2026 [GLASTOR®](https://glastor.es/) (INPI Reg. 4559568 & 4559567) • Dual-Hub Operations (Spain & Argentina · Factura E) • Led by [@glastor-dev](https://github.com/glastor-dev) (GitHub Developer Program Member).
