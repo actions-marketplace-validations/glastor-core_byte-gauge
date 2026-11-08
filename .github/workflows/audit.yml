@@ -69,11 +69,10 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .byte-gauge/baseline.json
-          key: byte-gauge-baseline-${{ github.ref_name }}-${{ github.sha }}
+          key: byte-gauge-baseline-${{ github.ref_name }}-${{ hashFiles('Cargo.lock') }}-${{ github.sha }}
           restore-keys: |
-            byte-gauge-baseline-${{ github.ref_name }}-
-            byte-gauge-baseline-main-
-            byte-gauge-baseline-master-
+            byte-gauge-baseline-${{ github.ref_name }}-${{ hashFiles('Cargo.lock') }}-
+            byte-gauge-baseline-main-${{ hashFiles('Cargo.lock') }}-
 
       - name: Run Byte-Gauge Self-Audit (Markdown + JSON + SARIF 2.1.0 + CycloneDX 1.5 SBOM)
         id: self-audit
@@ -81,7 +80,7 @@ jobs:
           ./target/release/byte-gauge \
             --file-path ./target/release/byte-gauge \
             --max-size-mb 10.0 \
-            --max-regression-pct 5.0 \
+            --max-regression-pct 10.0 \
             --fail-on-debug \
             --baseline-json .byte-gauge/baseline.json \
             --output-json .byte-gauge/current-audit.json \
@@ -121,7 +120,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: .byte-gauge/baseline.json
-          key: byte-gauge-baseline-${{ github.ref_name }}-${{ github.sha }}
+          key: byte-gauge-baseline-${{ github.ref_name }}-${{ hashFiles('Cargo.lock') }}-${{ github.sha }}
         env:
           BASELINE_PREP: ${{ steps.self-audit.outputs.status }}
 

@@ -45,11 +45,11 @@ struct Cli {
 
     /// Presupuesto máximo de tamaño en MB (falla el pipeline si el binario lo supera)
     #[arg(long, env = "INPUT_MAX_SIZE_MB")]
-    max_size_mb: Option<f64>,
+    max_size_mb: Option<String>,
 
     /// Porcentaje máximo permitido de crecimiento respecto al baseline JSON (ej. 5.0 para +5%)
     #[arg(long, env = "INPUT_MAX_REGRESSION_PCT")]
-    max_regression_pct: Option<f64>,
+    max_regression_pct: Option<String>,
 
     /// Umbral de alerta para la Entropía de Shannon global y por ventana de 64KB (0.0 a 8.0 bits/byte)
     #[arg(long, default_value_t = 7.2, env = "INPUT_MAX_ENTROPY")]
@@ -173,7 +173,7 @@ fn main() -> Result<()> {
 
     // Cargar línea base (baseline) si existe para comparar delta de tamaño
     let baseline: Option<AuditResult> = match args.baseline_json {
-        Some(ref base_path) if base_path.exists() => {
+        Some(ref base_path) if !base_path.as_os_str().is_empty() && base_path.exists() => {
             let content = std::fs::read_to_string(base_path).with_context(|| {
                 format!("Error leyendo baseline JSON en {}", base_path.display())
             })?;
@@ -182,9 +182,28 @@ fn main() -> Result<()> {
         _ => None,
     };
 
+    let max_size_mb = args
+        .max_size_mb
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.parse::<f64>().context("Valor inválido en --max-size-mb"))
+        .transpose()?;
+
+    let max_regression_pct = args
+        .max_regression_pct
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| {
+            s.parse::<f64>()
+                .context("Valor inválido en --max-regression-pct")
+        })
+        .transpose()?;
+
     let policy = PolicyConfig {
-        max_size_mb: args.max_size_mb,
-        max_regression_pct: args.max_regression_pct,
+        max_size_mb,
+        max_regression_pct,
         max_entropy: args.max_entropy,
         fail_on_debug_symbols: args.fail_on_debug,
         baseline,

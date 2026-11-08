@@ -173,7 +173,13 @@ runs:
         INPUT_OUTPUT_SBOM: ${{ inputs.output-sbom }}
         INPUT_OUTPUT_MARKDOWN: ".byte-gauge/sticky-comment.md"
         INPUT_BASELINE_JSON: ${{ inputs.baseline-json }}
-      run: "${ACTION_DIR}/target/release/byte-gauge"
+      run: |
+        for var in INPUT_FORBIDDEN_PATTERNS INPUT_MAX_SIZE_MB INPUT_MAX_REGRESSION_PCT INPUT_OUTPUT_JSON INPUT_OUTPUT_SARIF INPUT_OUTPUT_SBOM INPUT_BASELINE_JSON; do
+          if [ -z "${!var:-}" ]; then
+            unset "$var"
+          fi
+        done
+        "${ACTION_DIR}/target/release/byte-gauge"
 
     - name: Post or Update Pull Request Sticky Comment
       if: always() && inputs.post-pr-comment == 'true' && github.event_name == 'pull_request'
