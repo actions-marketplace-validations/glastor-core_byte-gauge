@@ -193,7 +193,7 @@ jobs:
 
             git add Cargo.toml Cargo.lock CITATION.cff CHANGELOG.md
             git commit -m "chore(release): ${NEW_TAG} [skip ci]"
-            git push origin HEAD:main
+            git push origin HEAD:main || echo "ℹ️ Branch protection active on main; tagging release directly on commit."
           fi
 
           MAJOR_NUM=$(echo "$NEW_VER" | cut -d. -f1)
