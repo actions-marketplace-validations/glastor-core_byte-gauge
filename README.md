@@ -7,47 +7,47 @@
 [![SLSA Provenance](https://img.shields.io/badge/SLSA-Build%20Provenance-brightgreen?style=flat-square)](https://github.com/glastor-core/byte-gauge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](./LICENSE)
 
-**Motor de auditoría binaria de alto rendimiento en Rust** (`std::fs` síncrono + **SIMD `memchr`** + **`checksec` / Binary Hardening** + análisis estructural **ELF / PE / Mach-O / WebAssembly (`.wasm`)** + **Entropía de Shannon Global y por Ventana de 64 KB** + **Cazador Heurístico de Secretos Enmascarados** + exportación **SARIF 2.1.0** + **SBOM CycloneDX 1.5** + **PR Sticky Comments**).
+**High-performance binary audit engine in Rust** (synchronous `std::fs` + **SIMD `memchr`** + **`checksec` / Binary Hardening** + structural analysis for **ELF / PE / Mach-O / WebAssembly (`.wasm`)** + **Global & 64 KB Window Shannon Entropy** + **Heuristic Masked Secret Hunter** + **SARIF 2.1.0** export + **CycloneDX 1.5 SBOM** + **PR Sticky Comments**).
 
-Diseñado para cerrar el eslabón de certificación de artefactos compilados dentro del ecosistema **[GLASTOR® Core](https://github.com/glastor-core)** en sinergia directa con **[`glastor-core/specter`](https://github.com/glastor-core/specter)**, **[`glastor-core/vortex`](https://github.com/glastor-core/vortex)**, **[`glastor-core/medusa`](https://github.com/glastor-core/medusa)** y **[`glastor-core/nemesis`](https://github.com/glastor-core/nemesis)**.
+Designed to complete the compiled artifact certification stage within the **[GLASTOR® Core](https://github.com/glastor-core)** ecosystem, operating in direct synergy with **[`glastor-core/specter`](https://github.com/glastor-core/specter)**, **[`glastor-core/vortex`](https://github.com/glastor-core/vortex)**, **[`glastor-core/medusa`](https://github.com/glastor-core/medusa)**, and **[`glastor-core/nemesis`](https://github.com/glastor-core/nemesis)**.
 
 ---
 
-## 🔗 Sinergia del Ecosistema GLASTOR® Core (`Nemesis` ➔ `Specter` ➔ `Vortex` ➔ `Byte-Gauge` ➔ `Medusa`)
+## 🔗 GLASTOR® Core Ecosystem Synergy (`Nemesis` ➔ `Specter` ➔ `Vortex` ➔ `Byte-Gauge` ➔ `Medusa`)
 
 <p align="center">
   <img src="./assets/ecosystem-synergy.svg" alt="GLASTOR® Core — Zero-Trust DevSecOps & Artifact Supply Chain Pipeline" width="100%" />
 </p>
 
-| Etapa | Repositorio | Rol en la Cadena de Suministro |
+| Stage | Repository | Role in the Supply Chain |
 | :--- | :--- | :--- |
-| **01 • SAST & IaC** | **[`glastor-core/nemesis`](https://github.com/glastor-core/nemesis)** | Auditoría estática de código fuente, prevención de fugas de secretos y seguridad IaC en GitHub Actions. |
-| **02 • API Contract** | **[`glastor-core/specter`](https://github.com/glastor-core/specter)** | Diferenciador AST políglota (`< 5 ms`), huella criptográfica de superficie pública y bloqueo de *Trojan Breaking Changes* SemVer. |
-| **03 • Pre-Build DAG** | **[`glastor-core/vortex`](https://github.com/glastor-core/vortex)** | Grafo de impacto AST (*Blast Radius*), particionamiento matemático LPT de tests y compilación multiplataforma. |
-| **04 • Artifact Gate** | **`glastor-core/byte-gauge`** | **Certificación binaria SIMD (`ELF`/`PE`/`Mach-O`/`Wasm`), `checksec`, entropía de Shannon por bloques de `64 KB`, SARIF 2.1.0 y SBOM CycloneDX 1.5.** |
-| **05 • Edge Runtime** | **[`glastor-core/medusa`](https://github.com/glastor-core/medusa)** | Gateway Zero-Trust resiliente en el borde con *Circuit Breaker* para ejecutar binarios y módulos Wasm certificados. |
+| **01 • SAST & IaC** | **[`glastor-core/nemesis`](https://github.com/glastor-core/nemesis)** | Static application security testing (SAST), secret leak prevention, and GitHub Actions IaC posture audit. |
+| **02 • API Contract** | **[`glastor-core/specter`](https://github.com/glastor-core/specter)** | Zero-compiler polyglot AST differ (`< 5 ms`), public API surface cryptographic fingerprinting, and SemVer *Trojan Breaking Change* protection. |
+| **03 • Pre-Build DAG** | **[`glastor-core/vortex`](https://github.com/glastor-core/vortex)** | AST impact blast-radius analysis, mathematical LPT test suite sharding, and multi-OS compilation pipeline. |
+| **04 • Artifact Gate** | **`glastor-core/byte-gauge`** | **SIMD binary certification (`ELF`/`PE`/`Mach-O`/`Wasm`), `checksec`, localized 64 KB window Shannon entropy, SARIF 2.1.0, and CycloneDX 1.5 SBOM.** |
+| **05 • Edge Runtime** | **[`glastor-core/medusa`](https://github.com/glastor-core/medusa)** | Resilient Zero-Trust edge API gateway with circuit-breaker capabilities to execute certified native binaries and Wasm modules. |
 
 ---
 
-## 🚀 Capacidades Enterprise (`v0.1.0`)
+## 🚀 Enterprise Capabilities (`v0.1.0`)
 
-1. **🌐 Soporte Multi-Formato Nativo (`ELF` + `PE/PE32+` + `Mach-O` + `WebAssembly .wasm`)**:
-   - Inspecciona ejecutables nativos con `goblin` y módulos **WebAssembly (`.wasm` v1)** con un decodificador nativo `uLEB128` sin dependencias externas (`Code (Bytecode)`, `Data (Static Memory)`, `Import`, `Export` y detección de secciones `name` / `.debug*` sin limpiar).
-2. **🛡️ Binary Hardening (`checksec` Nativo)**:
-   - Verifica `ASLR / PIE`, `64-bit High-Entropy VA`, `NX / DEP`, `Full/Partial RELRO`, `Control Flow Guard (CFG)` y `Wasm Linear Memory Sandbox`.
-3. **🎯 Entropía Localizada (Ventanas de `64 KB`) + 🕵️ Cazador Heurístico de Secretos Enmascarados (`--scan-entropy-secrets`)**:
-   - Calcula la entropía de Shannon global y el **pico máximo por bloque de 64 KB (`peak_chunk_entropy`)** con su offset hexadecimal exacto (`0x...`).
-   - Detecta tokens de alta entropía (`32..=64` bytes, $H \ge 4.70\text{ bits/B}$) y los **enmascara (`aB3d...cE6g`)** para jamás exponer secretos en los logs públicos del CI.
-4. **📦 Generador Nativo de SBOM CycloneDX 1.5 (`--output-sbom`) + 🔒 SARIF 2.1.0 (`--output-sarif`)**:
-   - Exporta el **Software Bill of Materials (CycloneDX v1.5 JSON)** con el digest SHA-256 del binario y el grafo de librerías dinámicas (`DT_NEEDED` / DLLs).
-   - Exporta **SARIF 2.1.0** (`BG001` a `BG007`) integrado con **GitHub Security Code Scanning**.
-5. **⚡ Modo Batch Multi-Binario + 💬 PR Sticky Comments + 📉 Gatekeeper FinOps (`--max-regression-pct`)**:
-   - Soporta múltiples rutas separadas por coma (`--file-path "dist/app-linux,dist/app-win.exe,dist/edge.wasm"`) generando una **Matriz Comparativa Multi-Binario**.
-   - Publica y actualiza automáticamente un **Sticky Comment en el Pull Request** (`post-pr-comment: "true"`).
+1. **🌐 Native Multi-Format Inspection (`ELF` + `PE/PE32+` + `Mach-O` + `WebAssembly .wasm`)**:
+   - Inspects native executables via `goblin` and **WebAssembly (`.wasm` v1)** modules using a zero-dependency native `uLEB128` section decoder (`Code (Bytecode)`, `Data (Static Memory)`, `Import`, `Export`, and unstripped `name` / `.debug*` section detection).
+2. **🛡️ Binary Hardening (Native `checksec`)**:
+   - Validates `ASLR / PIE`, `64-bit High-Entropy VA`, `NX / DEP`, `Full/Partial RELRO`, `Control Flow Guard (CFG)`, and `Wasm Linear Memory Sandbox`.
+3. **🎯 Localized Entropy (`64 KB` Windows) + 🕵️ Heuristic Masked Secret Hunter (`--scan-entropy-secrets`)**:
+   - Calculates global Shannon entropy alongside localized **64 KB peak window entropy (`peak_chunk_entropy`)** with exact hexadecimal offset reporting (`0x...`).
+   - Detects high-entropy tokens (`32..=64` bytes, $H \ge 4.70\text{ bits/B}$) and **masks them (`aB3d...cE6g`)** to ensure secrets are never leaked into public CI execution logs.
+4. **📦 Native CycloneDX 1.5 SBOM Generator (`--output-sbom`) + 🔒 SARIF 2.1.0 (`--output-sarif`)**:
+   - Exports **Software Bill of Materials (CycloneDX v1.5 JSON)** containing the binary SHA-256 digest and dynamic shared library dependency graph (`DT_NEEDED` / DLLs).
+   - Generates **SARIF 2.1.0** reports (`BG001` through `BG007`) integrated into **GitHub Security Code Scanning**.
+5. **⚡ Multi-Binary Batch Mode + 💬 PR Sticky Comments + 📉 FinOps Regression Gate (`--max-regression-pct`)**:
+   - Supports comma-separated binary paths (`--file-path "dist/app-linux,dist/app-win.exe,dist/edge.wasm"`), generating a consolidated **Multi-Binary Comparison Matrix**.
+   - Automatically posts and updates an interactive **Sticky Comment on Pull Requests** (`post-pr-comment: "true"`).
 
 ---
 
-## ⚙️ Uso como GitHub Action (`glastor-core/byte-gauge@v1`)
+## ⚙️ GitHub Action Usage (`glastor-core/byte-gauge@v1`)
 
 ```yaml
 - name: Audit Release Binaries & Wasm Modules
@@ -68,7 +68,7 @@ Diseñado para cerrar el eslabón de certificación de artefactos compilados den
 
 ---
 
-## 📄 Licencia y Autoría
+## 📄 License & Corporate Governance
 
-Distribuido bajo licencia **MIT**.  
+Distributed under the **MIT** license.  
 © 2026 **Andrés Antonio Cardoso — GLASTOR® Core ([@glastor-dev](https://github.com/glastor-dev))** — [https://glastor.es](https://glastor.es) (`ventas@glastor.es`).
