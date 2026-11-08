@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - "main"
-    paths-ignore:
-      - "**.md"
-      - "!CHANGELOG.md"
   workflow_dispatch:
     inputs:
       bump_override:
@@ -48,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout full Git history
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -73,8 +70,8 @@ jobs:
             NEW_VER="$CURRENT_CARGO_VER"
             IS_INITIAL="true"
             COMMIT_RANGE="HEAD"
-          elif ! gh release view "$LATEST_TAG" >/dev/null 2>&1 && [ "$(git rev-parse "${LATEST_TAG}^{commit}")" = "$(git rev-parse HEAD)" ]; then
-            echo "🎉 Tag inicial ${LATEST_TAG} detectado en HEAD sin GitHub Release publicado: procediendo a compilar y publicar ${LATEST_TAG}"
+          elif ! gh release view "$LATEST_TAG" >/dev/null 2>&1; then
+            echo "🎉 Tag ${LATEST_TAG} detectado sin GitHub Release publicado: re-sincronizando a HEAD y publicando ${LATEST_TAG}"
             NEW_VER="${LATEST_TAG#v}"
             IS_INITIAL="true"
             COMMIT_RANGE="HEAD"
@@ -203,9 +200,9 @@ jobs:
           git tag -f -a "$NEW_TAG" -m "Release ${NEW_TAG} — GLASTOR Byte-Gauge"
           git tag -f "v${MAJOR_NUM}" -m "Floating major tag v${MAJOR_NUM} -> ${NEW_TAG}"
           git tag -f "v1" -m "Floating Marketplace v1 tag -> ${NEW_TAG}"
-          git push origin "$NEW_TAG" --force
-          git push origin "v${MAJOR_NUM}" --force
-          git push origin "v1" --force
+          git push origin "refs/tags/${NEW_TAG}" --force
+          git push origin "refs/tags/v1" --force
+          git push origin "refs/tags/v${MAJOR_NUM}" --force || true
 
           echo "should_release=true" >> "$GITHUB_OUTPUT"
           echo "release_version=${NEW_VER}" >> "$GITHUB_OUTPUT"
@@ -249,7 +246,7 @@ jobs:
 
     steps:
       - name: Checkout release tag (${{ needs.version-gate.outputs.release_tag }})
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.version-gate.outputs.release_tag }}
 
@@ -262,6 +259,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Compile standalone release binary
+        shell: bash
         env:
           MATRIX_TARGET: ${{ matrix.target }}
         run: cargo build --release --locked --target "$MATRIX_TARGET"
@@ -291,7 +289,7 @@ jobs:
             --output-sbom "dist/${MATRIX_ARTIFACT}.cdx.json"
 
       - name: Upload compiled binary & CycloneDX SBOM artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: |
@@ -315,7 +313,7 @@ jobs:
 
     steps:
       - name: Download all compiled binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release-assets
           merge-multiple: true
@@ -327,7 +325,8 @@ jobs:
           cat SHA256SUMS.txt
 
       - name: Attest SLSA Build Provenance (Sigstore OIDC)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
+        continue-on-error: true
         with:
           subject-path: |
             release-assets/byte-gauge-linux-x64

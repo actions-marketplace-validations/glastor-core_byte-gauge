@@ -13,9 +13,11 @@
 lcov.info
 /coverage/
 
-# Byte-Gauge local telemetry & ephemeral audit outputs
+# Byte-Gauge & Specter local telemetry & ephemeral audit outputs
 /.byte-gauge/
+/.specter/
 byte-gauge-report.json
+specter-report.json
 *-report.json
 *.audit.json
 *.cdx.json

@@ -194,7 +194,12 @@ pub fn analyze_file_with_options(
         }
     }
 
-    let sha256 = format!("{:x}", hasher.finalize());
+    let digest = hasher.finalize();
+    let mut sha256 = String::with_capacity(64);
+    for &b in digest.as_slice() {
+        use std::fmt::Write as _;
+        let _ = write!(&mut sha256, "{b:02x}");
+    }
     let shannon_entropy = compute_shannon_entropy(&byte_counts, total_bytes);
     let binary_meta = inspect_binary_structure(path, total_bytes);
 

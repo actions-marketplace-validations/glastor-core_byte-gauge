@@ -1,7 +1,7 @@
 # 🛡️ GLASTOR® Byte-Gauge (`@glastor-core/byte-gauge`)
 
 [![CI & Self-Audit](https://img.shields.io/badge/CI-Byte--Gauge%20SIMD-success?style=flat-square&logo=rust)](https://github.com/glastor-core/byte-gauge)
-[![Ecosystem](https://img.shields.io/badge/GLASTOR%C2%AE%20Core-Nemesis%20%7C%20Vortex%20%7C%20Byte--Gauge%20%7C%20Medusa-0A66C2?style=flat-square)](https://github.com/glastor-core)
+[![Ecosystem](https://img.shields.io/badge/GLASTOR%C2%AE%20Core-Nemesis%20%7C%20Specter%20%7C%20Vortex%20%7C%20Byte--Gauge%20%7C%20Medusa-0A66C2?style=flat-square)](https://github.com/glastor-core)
 [![SARIF 2.1.0](https://img.shields.io/badge/GitHub%20Security-SARIF%202.1.0-purple?style=flat-square&logo=github)](https://github.com/glastor-core/byte-gauge)
 [![CycloneDX 1.5](https://img.shields.io/badge/SBOM-CycloneDX%201.5-orange?style=flat-square)](https://github.com/glastor-core/byte-gauge)
 [![SLSA Provenance](https://img.shields.io/badge/SLSA-Build%20Provenance-brightgreen?style=flat-square)](https://github.com/glastor-core/byte-gauge)
@@ -9,11 +9,11 @@
 
 **Motor de auditoría binaria de alto rendimiento en Rust** (`std::fs` síncrono + **SIMD `memchr`** + **`checksec` / Binary Hardening** + análisis estructural **ELF / PE / Mach-O / WebAssembly (`.wasm`)** + **Entropía de Shannon Global y por Ventana de 64 KB** + **Cazador Heurístico de Secretos Enmascarados** + exportación **SARIF 2.1.0** + **SBOM CycloneDX 1.5** + **PR Sticky Comments**).
 
-Diseñado para cerrar el eslabón de certificación de artefactos compilados dentro del ecosistema **[GLASTOR® Core](https://github.com/glastor-core)** en sinergia directa con **[`glastor-core/vortex`](https://github.com/glastor-core/vortex)**, **[`glastor-core/medusa`](https://github.com/glastor-core/medusa)** y **[`glastor-core/nemesis`](https://github.com/glastor-core/nemesis)**.
+Diseñado para cerrar el eslabón de certificación de artefactos compilados dentro del ecosistema **[GLASTOR® Core](https://github.com/glastor-core)** en sinergia directa con **[`glastor-core/specter`](https://github.com/glastor-core/specter)**, **[`glastor-core/vortex`](https://github.com/glastor-core/vortex)**, **[`glastor-core/medusa`](https://github.com/glastor-core/medusa)** y **[`glastor-core/nemesis`](https://github.com/glastor-core/nemesis)**.
 
 ---
 
-## 🔗 Sinergia del Ecosistema GLASTOR® Core (`Nemesis` ➔ `Vortex` ➔ `Byte-Gauge` ➔ `Medusa`)
+## 🔗 Sinergia del Ecosistema GLASTOR® Core (`Nemesis` ➔ `Specter` ➔ `Vortex` ➔ `Byte-Gauge` ➔ `Medusa`)
 
 ```mermaid
 flowchart LR
@@ -21,20 +21,25 @@ flowchart LR
         N["🛡️ glastor-core/nemesis\nSource & IaC Security Gate"]
     end
 
-    subgraph PreBuild["2️⃣ Pre-Build & Test (Vortex)"]
+    subgraph Contract["2️⃣ API Contract (Specter)"]
+        S["👻 glastor-core/specter\nPolyglot AST Contract & SemVer Gate"]
+    end
+
+    subgraph PreBuild["3️⃣ Pre-Build & Test (Vortex)"]
         V["⚡ glastor-core/vortex\nAST Impact DAG & LPT Sharding"]
     end
 
-    subgraph PostBuild["3️⃣ Artifact Gatekeeper (Byte-Gauge)"]
+    subgraph PostBuild["4️⃣ Artifact Gatekeeper (Byte-Gauge)"]
         B["🔬 glastor-core/byte-gauge\nRust SIMD, checksec, Wasm, SARIF & CycloneDX SBOM"]
     end
 
-    subgraph Runtime["4️⃣ Edge Runtime (Medusa)"]
+    subgraph Runtime["5️⃣ Edge Runtime (Medusa)"]
         M["🐍 glastor-core/medusa\nZero-Trust Resilient Edge Gateway"]
     end
 
-    N -->|"Código limpio"| V
-    V -->|"Binarios / Wasm compilados\n(vortex-linux-x64 / medusa.wasm)"| B
+    N -->|"Código limpio"| S
+    S -->|"Contrato SemVer íntegro"| V
+    V -->|"Binarios / Wasm compilados\n(specter / vortex / medusa.wasm)"| B
     B -->|"Artefacto certificado\n(SHA-256 + SBOM + SLSA + 0 Leaks)"| M
 ```
 

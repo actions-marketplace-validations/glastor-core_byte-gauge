@@ -1,5 +1,5 @@
 name: "GLASTOR® Byte-Gauge — Rust SIMD Binary & Artifact Auditor"
-description: "High-speed Rust SIMD binary auditor (ELF/PE/Mach-O/Wasm checksec, Shannon entropy, SARIF 2.1.0, CycloneDX SBOM & PR Sticky Comment). Complements Vortex & Medusa."
+description: "High-speed Rust SIMD binary & Wasm auditor (checksec, Shannon entropy, SARIF 2.1.0, CycloneDX SBOM & FinOps telemetry)."
 author: "Andrés Antonio Cardoso — GLASTOR® Core (@glastor-dev)"
 branding:
   icon: "shield"
@@ -145,7 +145,7 @@ runs:
     - name: Cache byte-gauge release binary (Fallback)
       id: cache-bin
       if: steps.prebuilt.outputs.downloaded != 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ${{ github.action_path }}/target/release/byte-gauge*
         key: glastor-byte-gauge-bin-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles(format('{0}/Cargo.lock', github.action_path), format('{0}/src/**/*.rs', github.action_path)) }}

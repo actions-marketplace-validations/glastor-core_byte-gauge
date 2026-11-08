@@ -2,9 +2,9 @@ name: 🛡️ Byte-Gauge CI & Binary Audit
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
   workflow_dispatch:
 
 # Estándar GitHub 2026 / OpenSSF Scorecard: Cero permisos globales por defecto
@@ -30,7 +30,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -46,14 +48,25 @@ jobs:
       - name: Lint with Clippy (strict)
         run: cargo clippy --all-targets -- -D warnings
 
-      - name: Run unit & E2E integration tests (16 tests)
+      - name: Run unit & E2E integration tests (18 tests)
         run: cargo test --verbose
+
+      - name: Run GLASTOR® Specter AST API Contract & SemVer Gatekeeper
+        id: specter-audit
+        uses: glastor-core/specter@v1
+        with:
+          head-dir: "."
+          fail-on-trojan: "true"
+          output-json: ".specter/specter-audit.json"
+          output-sarif: ".specter/specter.sarif"
+          output-sbom: ".specter/specter.cdx.json"
+          post-pr-comment: "true"
 
       - name: Build optimized release binary (stripped + LTO)
         run: cargo build --release --locked
 
       - name: Restore previous audit baseline (for size delta tracking)
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .byte-gauge/baseline.json
           key: byte-gauge-baseline-${{ github.ref_name }}-${{ github.sha }}
@@ -95,9 +108,9 @@ jobs:
             fi
           fi
 
-      - name: Upload SARIF 2.1.0 report to GitHub Security (Code Scanning)
+      - name: Upload SARIF 2.1.0 reports to GitHub Security (Code Scanning)
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         continue-on-error: true
         with:
           sarif_file: .byte-gauge/byte-gauge.sarif
@@ -105,7 +118,7 @@ jobs:
 
       - name: Update baseline cache on main/master
         if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .byte-gauge/baseline.json
           key: byte-gauge-baseline-${{ github.ref_name }}-${{ github.sha }}
@@ -114,13 +127,16 @@ jobs:
 
       - name: Upload JSON, SARIF & CycloneDX SBOM Telemetry Artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: byte-gauge-telemetry
           path: |
             .byte-gauge/current-audit.json
             .byte-gauge/byte-gauge.sarif
             .byte-gauge/byte-gauge.cdx.json
+            .specter/specter-audit.json
+            .specter/specter.sarif
+            .specter/specter.cdx.json
           retention-days: 14
 
   # Dogfooding del ecosistema GLASTOR® Core con glastor-core/nemesis
@@ -132,7 +148,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run GLASTOR® Nemesis SAST & IaC Security Gate
         uses: glastor-core/nemesis@v1

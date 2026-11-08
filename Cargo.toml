@@ -13,11 +13,11 @@ categories = ["command-line-utilities", "development-tools::profiling", "cryptog
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive", "env"] }
-goblin = "0.9"
+goblin = "0.10"
 memchr = "2.7"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sha2 = "0.10"
+sha2 = "0.11"
 
 [profile.release]
 opt-level = 3
