@@ -1,6 +1,6 @@
 [package]
 name = "byte-gauge"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Andrés Antonio Cardoso <ventas@glastor.es>"]
 description = "GLASTOR® Core — High-performance Rust SIMD binary auditor, ELF/PE/Mach-O section analyzer, Shannon entropy & FinOps telemetry engine for GitHub Actions (complements @glastor-core/vortex & @glastor-core/medusa)"
