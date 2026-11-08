@@ -15,33 +15,17 @@ Diseñado para cerrar el eslabón de certificación de artefactos compilados den
 
 ## 🔗 Sinergia del Ecosistema GLASTOR® Core (`Nemesis` ➔ `Specter` ➔ `Vortex` ➔ `Byte-Gauge` ➔ `Medusa`)
 
-```mermaid
-flowchart LR
-    subgraph SAST["1️⃣ SAST & IaC (Nemesis)"]
-        N["🛡️ glastor-core/nemesis\nSource & IaC Security Gate"]
-    end
+<p align="center">
+  <img src="./assets/ecosystem-synergy.svg" alt="GLASTOR® Core — Zero-Trust DevSecOps & Artifact Supply Chain Pipeline" width="100%" />
+</p>
 
-    subgraph Contract["2️⃣ API Contract (Specter)"]
-        S["👻 glastor-core/specter\nPolyglot AST Contract & SemVer Gate"]
-    end
-
-    subgraph PreBuild["3️⃣ Pre-Build & Test (Vortex)"]
-        V["⚡ glastor-core/vortex\nAST Impact DAG & LPT Sharding"]
-    end
-
-    subgraph PostBuild["4️⃣ Artifact Gatekeeper (Byte-Gauge)"]
-        B["🔬 glastor-core/byte-gauge\nRust SIMD, checksec, Wasm, SARIF & CycloneDX SBOM"]
-    end
-
-    subgraph Runtime["5️⃣ Edge Runtime (Medusa)"]
-        M["🐍 glastor-core/medusa\nZero-Trust Resilient Edge Gateway"]
-    end
-
-    N -->|"Código limpio"| S
-    S -->|"Contrato SemVer íntegro"| V
-    V -->|"Binarios / Wasm compilados\n(specter / vortex / medusa.wasm)"| B
-    B -->|"Artefacto certificado\n(SHA-256 + SBOM + SLSA + 0 Leaks)"| M
-```
+| Etapa | Repositorio | Rol en la Cadena de Suministro |
+| :--- | :--- | :--- |
+| **01 • SAST & IaC** | **[`glastor-core/nemesis`](https://github.com/glastor-core/nemesis)** | Auditoría estática de código fuente, prevención de fugas de secretos y seguridad IaC en GitHub Actions. |
+| **02 • API Contract** | **[`glastor-core/specter`](https://github.com/glastor-core/specter)** | Diferenciador AST políglota (`< 5 ms`), huella criptográfica de superficie pública y bloqueo de *Trojan Breaking Changes* SemVer. |
+| **03 • Pre-Build DAG** | **[`glastor-core/vortex`](https://github.com/glastor-core/vortex)** | Grafo de impacto AST (*Blast Radius*), particionamiento matemático LPT de tests y compilación multiplataforma. |
+| **04 • Artifact Gate** | **`glastor-core/byte-gauge`** | **Certificación binaria SIMD (`ELF`/`PE`/`Mach-O`/`Wasm`), `checksec`, entropía de Shannon por bloques de `64 KB`, SARIF 2.1.0 y SBOM CycloneDX 1.5.** |
+| **05 • Edge Runtime** | **[`glastor-core/medusa`](https://github.com/glastor-core/medusa)** | Gateway Zero-Trust resiliente en el borde con *Circuit Breaker* para ejecutar binarios y módulos Wasm certificados. |
 
 ---
 
