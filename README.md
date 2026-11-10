@@ -1,6 +1,9 @@
 # 🛡️ GLASTOR® Byte-Gauge (`@glastor-core/byte-gauge`)
 
 [![CI & Self-Audit](https://img.shields.io/badge/CI-Byte--Gauge%20SIMD-success?style=flat-square&logo=rust)](https://github.com/glastor-core/byte-gauge)
+[![crates.io version](https://img.shields.io/crates/v/byte-gauge?style=flat-square&color=orange&logo=rust)](https://crates.io/crates/byte-gauge)
+[![crates.io downloads](https://img.shields.io/crates/d/byte-gauge?style=flat-square&color=blue&logo=rust)](https://crates.io/crates/byte-gauge)
+[![Homebrew Tap](https://img.shields.io/badge/Homebrew-brew_install_byte--gauge-orange?style=flat-square&logo=homebrew)](https://github.com/glastor-core/homebrew-tap)
 [![Ecosystem](https://img.shields.io/badge/GLASTOR%C2%AE%20Core-Nemesis%20%7C%20Specter%20%7C%20Vortex%20%7C%20Byte--Gauge%20%7C%20Medusa-0A66C2?style=flat-square)](https://github.com/glastor-core)
 [![SARIF 2.1.0](https://img.shields.io/badge/GitHub%20Security-SARIF%202.1.0-purple?style=flat-square&logo=github)](https://github.com/glastor-core/byte-gauge)
 [![CycloneDX 1.5](https://img.shields.io/badge/SBOM-CycloneDX%201.5-orange?style=flat-square)](https://github.com/glastor-core/byte-gauge)
