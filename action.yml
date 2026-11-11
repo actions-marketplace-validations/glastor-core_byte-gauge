@@ -192,17 +192,15 @@ runs:
         if [ ! -f ".byte-gauge/sticky-comment.md" ] || [ -z "$PR_NUM" ]; then
           exit 0
         fi
-        cat << 'EOF' >> .byte-gauge/sticky-comment.md
-
----
-> 🛡️ *Audited by [GLASTOR® Byte-Gauge](https://github.com/glastor-core/byte-gauge) • ⭐ Star us on GitHub!*
-<details><summary>🏅 Embed Byte-Gauge badge in your README</summary>
-
-```markdown
-[![Byte-Gauge Audited](https://img.shields.io/badge/Security-Byte--Gauge%20Audited-00C7B7?style=flat&logo=shield)](https://github.com/glastor-core/byte-gauge)
-```
-</details>
-EOF
+        echo "" >> .byte-gauge/sticky-comment.md
+        echo "---" >> .byte-gauge/sticky-comment.md
+        echo "> 🛡️ *Audited by [GLASTOR® Byte-Gauge](https://github.com/glastor-core/byte-gauge) • ⭐ Star us on GitHub!*" >> .byte-gauge/sticky-comment.md
+        echo "<details><summary>🏅 Embed Byte-Gauge badge in your README</summary>" >> .byte-gauge/sticky-comment.md
+        echo "" >> .byte-gauge/sticky-comment.md
+        echo '```markdown' >> .byte-gauge/sticky-comment.md
+        echo '[![Byte-Gauge Audited](https://img.shields.io/badge/Security-Byte--Gauge%20Audited-00C7B7?style=flat&logo=shield)](https://github.com/glastor-core/byte-gauge)' >> .byte-gauge/sticky-comment.md
+        echo '```' >> .byte-gauge/sticky-comment.md
+        echo "</details>" >> .byte-gauge/sticky-comment.md
         EXISTING_ID=$(gh api "repos/${REPO_FULL}/issues/${PR_NUM}/comments" \
           --jq '.[] | select(.body | contains("<!-- glastor-byte-gauge-sticky-comment -->")) | .id' | head -n 1 || true)
         if [ -n "$EXISTING_ID" ]; then
