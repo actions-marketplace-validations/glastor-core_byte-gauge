@@ -9,6 +9,8 @@
 [![CycloneDX 1.5](https://img.shields.io/badge/SBOM-CycloneDX%201.5-orange?style=flat-square)](https://github.com/glastor-core/byte-gauge)
 [![SLSA Provenance](https://img.shields.io/badge/SLSA-Build%20Provenance-brightgreen?style=flat-square)](https://github.com/glastor-core/byte-gauge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](./LICENSE)
+[![Star on GitHub](https://img.shields.io/github/stars/glastor-core/byte-gauge?style=social)](https://github.com/glastor-core/byte-gauge)
+[![Follow @glastor-dev](https://img.shields.io/github/followers/glastor-dev?label=Follow%20%40glastor-dev&style=social)](https://github.com/glastor-dev)
 
 **High-performance binary audit engine in Rust** (synchronous `std::fs` + **SIMD `memchr`** + **`checksec` / Binary Hardening** + structural analysis for **ELF / PE / Mach-O / WebAssembly (`.wasm`)** + **Global & 64 KB Window Shannon Entropy** + **Heuristic Masked Secret Hunter** + **SARIF 2.1.0** export + **CycloneDX 1.5 SBOM** + **PR Sticky Comments**).
 
@@ -68,6 +70,18 @@ Designed to complete the compiled artifact certification stage within the **[GLA
     output-sbom: ".byte-gauge/byte-gauge.cdx.json"
     post-pr-comment: "true"
 ```
+
+---
+
+## ⭐ Star History
+
+<div align="center">
+
+[![Star History Chart](https://api.star-history.com/svg?repos=glastor-core/byte-gauge&type=Date)](https://star-history.com/#glastor-core/byte-gauge&Date)
+
+*If you find Byte-Gauge useful, please consider starring the repository and following [@glastor-dev](https://github.com/glastor-dev) on GitHub!*
+
+</div>
 
 ---
 
