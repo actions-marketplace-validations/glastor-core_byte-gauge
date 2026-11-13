@@ -6,6 +6,7 @@ authors = ["Andrés Antonio Cardoso <ventas@glastor.es>"]
 description = "GLASTOR® Core — High-performance Rust SIMD binary auditor, ELF/PE/Mach-O section analyzer, Shannon entropy & FinOps telemetry engine for GitHub Actions (complements @glastor-core/vortex & @glastor-core/medusa)"
 homepage = "https://glastor.es"
 repository = "https://github.com/glastor-core/byte-gauge"
+documentation = "https://docs.rs/byte-gauge"
 license = "MIT"
 keywords = ["github-actions", "binary-audit", "simd", "devsecops", "glastor-core"]
 categories = ["command-line-utilities", "development-tools::profiling", "cryptography"]
