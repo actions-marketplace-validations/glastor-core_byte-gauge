@@ -56,6 +56,18 @@ Designed to complete the compiled artifact certification stage within the **[GLA
 
 ---
 
+## 🔒 Live GitHub Security (SARIF 2.1.0) Integration
+
+`byte-gauge` natively emits **SARIF 2.1.0** telemetry (`BG001`–`BG007`) directly into **GitHub Security ➔ Code scanning**, providing commit-level traceability for binary size regressions, unstripped debug symbols, `checksec` hardening gaps, and leaked high-entropy secrets:
+
+<p align="center">
+  <img src="./assets/sarif-code-scanning.jpg" alt="GLASTOR® Byte-Gauge — Live SARIF 2.1.0 Alert (BG003) in GitHub Code Scanning" width="100%" />
+</p>
+
+> Real example from [`glastor-core/byte-gauge/security/code-scanning/1`](https://github.com/glastor-core/byte-gauge/security/code-scanning/1): rule **`BG003` (`SizeRegressionExceeded`)** caught a `+5.25%` binary size regression in commit `0282f3f` and automatically marked the alert as **Fixed** once resolved in `fb94565`.
+
+---
+
 ## ⚙️ GitHub Action Usage (`glastor-core/byte-gauge@v1`)
 
 ```yaml
