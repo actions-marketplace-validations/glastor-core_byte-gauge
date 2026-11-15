@@ -9,6 +9,10 @@
 [![CycloneDX 1.5](https://img.shields.io/badge/SBOM-CycloneDX%201.5-orange?style=flat-square)](https://github.com/glastor-core/byte-gauge)
 [![SLSA Provenance](https://img.shields.io/badge/SLSA-Build%20Provenance-brightgreen?style=flat-square)](https://github.com/glastor-core/byte-gauge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](./LICENSE)
+<br>
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/glastor-core/byte-gauge)
+[![Watch on GitHub](https://img.shields.io/github/watchers/glastor-core/byte-gauge?style=social&label=Watch)](https://github.com/glastor-core/byte-gauge/watchers)
+[![Fork on GitHub](https://img.shields.io/github/forks/glastor-core/byte-gauge?style=social&label=Fork)](https://github.com/glastor-core/byte-gauge/fork)
 [![Star on GitHub](https://img.shields.io/github/stars/glastor-core/byte-gauge?style=social)](https://github.com/glastor-core/byte-gauge)
 [![Follow @glastor-dev](https://img.shields.io/github/followers/glastor-dev?label=Follow%20%40glastor-dev&style=social)](https://github.com/glastor-dev)
 
@@ -70,6 +74,12 @@ Designed to complete the compiled artifact certification stage within the **[GLA
     output-sbom: ".byte-gauge/byte-gauge.cdx.json"
     post-pr-comment: "true"
 ```
+
+---
+
+## 🔔 Stay Updated on Binary Auditing & SBOM Releases
+
+Click **Watch** (top-right) and select **Custom ➔ Releases** to receive notifications when new checksec verifications, Wasm sections, or CycloneDX SBOM standards are released.
 
 ---
 
