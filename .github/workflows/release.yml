@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout full Git history
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -246,7 +246,7 @@ jobs:
 
     steps:
       - name: Checkout release tag (${{ needs.version-gate.outputs.release_tag }})
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           ref: ${{ needs.version-gate.outputs.release_tag }}
 
