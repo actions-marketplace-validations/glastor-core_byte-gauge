@@ -335,7 +335,7 @@ jobs:
             release-assets/byte-gauge-macos-x64
 
       - name: Publish Official GitHub Release (${{ needs.version-gate.outputs.release_tag }})
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.version-gate.outputs.release_tag }}
           name: "🛡️ GLASTOR® Byte-Gauge ${{ needs.version-gate.outputs.release_tag }}"
