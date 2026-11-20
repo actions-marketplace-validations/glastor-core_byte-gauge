@@ -18,6 +18,10 @@
 
 **High-performance binary audit engine in Rust** (synchronous `std::fs` + **SIMD `memchr`** + **`checksec` / Binary Hardening** + structural analysis for **ELF / PE / Mach-O / WebAssembly (`.wasm`)** + **Global & 64 KB Window Shannon Entropy** + **Heuristic Masked Secret Hunter** + **SARIF 2.1.0** export + **CycloneDX 1.5 SBOM** + **PR Sticky Comments**).
 
+<p align="center">
+  <img src="./assets/terminal-demo.svg" alt="GLASTOR® Byte-Gauge — Live Terminal Demo" width="100%" />
+</p>
+
 Designed to complete the compiled artifact certification stage within the **[GLASTOR® Core](https://github.com/glastor-core)** ecosystem, operating in direct synergy with **[`glastor-core/specter`](https://github.com/glastor-core/specter)**, **[`glastor-core/vortex`](https://github.com/glastor-core/vortex)**, **[`glastor-core/medusa`](https://github.com/glastor-core/medusa)**, and **[`glastor-core/nemesis`](https://github.com/glastor-core/nemesis)**.
 
 ---
